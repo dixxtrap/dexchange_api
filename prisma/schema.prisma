@@ -1,0 +1,36 @@
+datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+}
+
+generator client {
+     provider = "prisma-client-js"
+}
+
+enum TRANSFERT_CHANNEL {
+     WAVE
+     OM
+}
+
+enum TRANSFERT_STATUS {
+     PENDING
+     PROCESSING
+     SUCCESS
+     FAILED
+     CANCELED
+}
+
+model Tarnsferts {
+     id        String            @id @default(cuid())
+     amount    Float
+     currency  String?
+     ref       String            @unique
+     channel   TRANSFERT_CHANNEL
+     recipient Json?
+     metadata  Json?
+     fees      Int
+     total     Int
+     status    TRANSFERT_STATUS  @default(PENDING)
+     createdAt DateTime          @default(now())
+     updatedAt DateTime          @updatedAt
+}
