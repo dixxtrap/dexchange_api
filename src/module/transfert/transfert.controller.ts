@@ -3,8 +3,10 @@ import { TransfertService } from './transfert.service';
 import { CreateTransfertDTO } from './dto/create-transfert.dto';
 import { UpdateTransfertDTO } from './dto/update-transfert.dto';
 import { TransfertQueryDTO } from './dto/filter.dto';
+import { ApiBasicAuth, ApiHeader } from '@nestjs/swagger';
 
 @Controller('transfert')
+@ApiBasicAuth('x-api-key')
 export class TransfertController {
   constructor(private readonly transfertService: TransfertService) { }
 

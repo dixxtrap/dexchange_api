@@ -51,8 +51,9 @@ export class TransfertService implements OnModuleInit {
   }
 
   findAll(dto: TransfertQueryDTO) {
-    const { channel, maxAmount, minAmount, status, cursor, limit } = dto;
+    const { channel, maxAmount, minAmount, status, cursor, limit, q } = dto;
     const where: Prisma.TarnsfertsWhereInput = {
+      ...(q && { OR: [{ ref: { equals: q } }, { recipient: { path: ['name'], string_contains: q, mode: 'insensitive' } }] }),
       ... (channel && { channel: { equals: channel } }),
       ... (status && { status: status }),
       amount: {
@@ -64,7 +65,7 @@ export class TransfertService implements OnModuleInit {
       where, take: limit,
       skip: cursor ? 1 : 0,
       ...(cursor ? { cursor: { id: cursor } } : {}),
-    }).then(val => ({ items: val, nextCursor: val[val.length - 1].id }));
+    }).then(val => ({ items: val, nextCursor: val.length > 0 ? val[val.length - 1].id : null }));
   }
 
   findOne(id: string) {

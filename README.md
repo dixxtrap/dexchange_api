@@ -34,12 +34,15 @@ $ npm install
 ## Compile and run the project
 
 ```bash
+# migration
+$ npx prisma  migrate dev --name init
 # development
 $ npm run start
 
 # watch mode
 $ npm run start:dev
-
+# watch mode
+$ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
@@ -57,43 +60,227 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Deployment
+````
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### ⚙️ Variables d’environnement (`.env`)
+```env
+API_KEY=admin
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dexchange
+PORT=3000
+````
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### ▶️ Lancer le projet
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx prisma migrate dev --name init
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 📘 Documentation Swagger
 
-## Resources
+> Disponible sur :  
+> 👉 [http://localhost:3000/v1/documentation](http://localhost:3000/v1/documentation)
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🔐 Authentification (API Key Guard)
 
-## Support
+Toutes les routes de l’API sont **protégées** par un guard global (`ApiKeyGuard`).  
+Celui-ci vérifie la présence du header :
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```http
+x-api-key: admin
+```
 
-## Stay in touch
+- Si absent → `401 Unauthorized`
+- Si incorrect → `403 Forbidden`
+- Si valide → accès autorisé à tous les endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+> L’utilisateur `admin` est donc autorisé par défaut sur tous les endpoints de l’API.
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-# dexchange_api
+## 🧱 Stack Technique
+
+- **NestJS** — Framework backend modulaire et typé
+- **Prisma ORM** — Génère automatiquement les modèles et types TypeScript depuis `schema.prisma`
+- **PostgreSQL** (ou autre DB Prisma-compatible)
+- **Swagger** — Documentation automatique
+- **class-validator / class-transformer** — Validation des DTOs
+- **ConfigModule** — Gestion centralisée de la configuration
+- **API Key Guard** — Sécurisation des endpoints
+
+---
+
+## 📂 Structure du projet
+
+```
+src/
+├── main.ts
+├── app.module.ts
+├── common/
+│   └── guards/api-key.guard.ts
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+└── transfers/
+    ├── dto/
+    │   └── create-transfer.dto.ts
+    ├── transfers.controller.ts
+    ├── transfers.service.ts
+    └── transfers.module.ts
+```
+
+---
+
+## 🔁 Liste des endpoints `transfers`
+
+### `POST /v1/transfers`
+
+Créer un transfert.
+
+**Body :**
+
+```json
+{
+  "amount": 12500,
+  "currency": "XOF",
+  "channel": "WAVE",
+  "recipient": { "phone": "+221770000000", "name": "Jane Doe" },
+  "metadata": { "orderId": "ABC-123" }
+}
+```
+
+**Réponse :**
+
+```json
+{
+  "id": "uuid",
+  "reference": "TRF-20251102-1234",
+  "status": "PENDING",
+  "fees": 100,
+  "total": 12600
+}
+```
+
+---
+
+### `GET /v1/transfers`
+
+Liste paginée des transferts (pagination par curseur, filtres, recherche).
+
+**Query params :**
+
+- `status` — filtre par statut
+- `channel` — filtre par canal
+- `minAmount`, `maxAmount` — bornes du montant
+- `q` — recherche par référence ou nom du destinataire
+- `limit`, `cursor` — pagination
+
+---
+
+### `GET /v1/transfers/:id`
+
+Retourne un transfert par ID.
+
+---
+
+### `POST /v1/transfers/:id/process`
+
+Simule le traitement d’un transfert :
+
+- 70 % de chances → `SUCCESS`
+- 30 % → `FAILED`
+
+Transitions :
+
+```
+PENDING → PROCESSING → SUCCESS | FAILED
+```
+
+---
+
+### `POST /v1/transfers/:id/cancel`
+
+Annule un transfert en attente (`PENDING` → `CANCELED`).
+
+---
+
+## 📘 Documentation Swagger
+
+Swagger regroupe et décrit toutes les routes :
+
+- Accessible sur **/v1/documentation**
+- Indique les schémas DTO, les exemples et les headers requis (`x-api-key`)
+- Généré automatiquement via `@nestjs/swagger`
+
+---
+
+## 🧩 Prisma ORM
+
+Prisma est utilisé pour :
+
+- **Modéliser la base de données** (`prisma/schema.prisma`)
+- **Générer automatiquement les types TypeScript**
+- **Exécuter les migrations**
+
+Exemple :
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+Les tables `Transfer` et `AuditEvent` sont synchronisées avec Prisma et disponibles via le client `PrismaService`.
+
+---
+
+## 🧠 Architecture évolutive (Monorepo PNPM)
+
+Ce projet pourrait être organisé en **monorepo PNPM**, avec 3 packages séparés :
+
+```
+apps/
+  ├── api/           # Service NestJS (REST API)
+  └── dashboard/     # Application front (React, Next, etc.)
+packages/
+  ├── database/      # Prisma + schémas + migrations
+  └── dto/           # Types partagés entre API et dashboard
+```
+
+### 🔄 Avantages :
+
+- Partage **des types Prisma** entre API et front
+- Contrat fort sur le typage (`DTO` et `Model`)
+- Découplage clair entre **données** et **services**
+- Maintenance plus simple avec PNPM workspaces
+
+Ainsi :
+
+- L’**API** accède directement à la base (`packages/database`)
+- Le **Dashboard** importe uniquement les types nécessaires via `packages/dto`, sans toucher à la BD
+
+---
+
+## 🧪 Tests unitaires
+
+Les tests couvrent :
+
+- Le calcul des frais (`0.8 %`, min `100`, max `1500`)
+- Les transitions d’état (`PENDING → SUCCESS/FAILED`)
+- Les vérifications du guard (`x-api-key`)
+
+Lancer les tests :
+
+```bash
+npm test
+```
+
+---
+
+## 📜 Licence
+
+Projet développé à titre de test technique (DEXCHANGE).  
+Licence libre à usage d’évaluation et de démonstration.
+
+---
