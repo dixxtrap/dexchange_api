@@ -119,16 +119,25 @@ src/
 ├── main.ts
 ├── app.module.ts
 ├── common/
-│   └── guards/api-key.guard.ts
+│     └── guard
+        └── guards/api-key.guard.ts
+      ├── decorator
+      └── helper
+
 ├── prisma/
 │   ├── prisma.module.ts
 │   └── prisma.service.ts
-└── transfers/
-    ├── dto/
-    │   └── create-transfer.dto.ts
-    ├── transfers.controller.ts
-    ├── transfers.service.ts
-    └── transfers.module.ts
+└── Module
+    └── Configuration
+        ├── audit
+        ├── database
+        ├── configuratiuon.module.ts
+    └── transfers/
+        ├── dto/
+        │   └── create-transfer.dto.ts
+        ├── transfers.controller.ts
+        ├── transfers.service.ts
+        └── transfers.module.ts
 ```
 
 ---
