@@ -125,8 +125,8 @@ src/
       └── helper
 
 ├── prisma/
-│   ├── prisma.module.ts
-│   └── prisma.service.ts
+│   ├── migrations
+│   └── schema.prisma
 └── Module
     └── Configuration
         ├── audit
