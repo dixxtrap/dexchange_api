@@ -240,6 +240,164 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
+## 🐳 Docker Setup
+
+Le projet est entièrement conteneurisé :  
+👉 Une base **PostgreSQL**, une **API NestJS (DEXCHANGE)** et un **Adminer** pour visualiser la base.
+
+### 📦 1. Lancer les services
+
+```bash
+docker compose up -d --build
+```
+
+👉 Les services démarrent :
+| Service | URL | Description |
+|----------|-----|-------------|
+| **API NestJS** | http://localhost:3000 | Application backend |
+| **Swagger Docs** | http://localhost:3000/v1/documentation | Documentation de l’API |
+| **Postgres DB** | localhost:5432 | Base de données |
+| **Adminer** | http://localhost:8080 | Interface web pour la DB |
+
+---
+
+### ⚙️ 2. Variables d’environnement (`.env`)
+
+```env
+PORT=3000
+API_KEY=admin
+DATABASE_URL="postgresql://Kalanji:Kalanji2024@db:5432/dexchange?schema=public"
+POSTGRES_USER=Kalanji
+POSTGRES_PASSWORD=Kalanji2024
+POSTGRES_DB=dexchange
+```
+
+> 💡 `db` est le nom du service Postgres dans Docker.  
+> La variable `DATABASE_URL` est utilisée automatiquement par **Prisma** et **NestJS**.
+
+---
+
+### 🧩 3. Fichiers Docker
+
+#### `docker-compose.yml`
+
+```yaml
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: Kalanji
+      POSTGRES_PASSWORD: Kalanji2024
+      POSTGRES_DB: dexchange
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U Kalanji -d dexchange']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [db_network]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dexchange-api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: ['sh', './docker/entrypoint.sh']
+    networks: [db_network]
+
+  adminer:
+    image: adminer:latest
+    restart: always
+    ports:
+      - '8080:8080'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [db_network]
+
+volumes:
+  pgdata:
+
+networks:
+  db_network:
+    driver: bridge
+```
+
+#### `Dockerfile`
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /usr/src/app
+RUN apk add --no-cache openssl
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npx prisma generate || true
+EXPOSE 3000
+CMD ["sh", "./docker/entrypoint.sh"]
+```
+
+#### `docker/entrypoint.sh`
+
+```sh
+#!/usr/bin/env sh
+set -e
+echo "⏳ Waiting for Postgres..."
+until pg_isready -h db -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+  sleep 2
+done
+echo "✅ Postgres ready."
+echo "▶️ Prisma generate"
+npx prisma generate
+echo "▶️ Prisma migrate"
+npx prisma migrate deploy
+echo "🚀 Starting NestJS app"
+npm run start:dev
+```
+
+> ⚠️ Rends le script exécutable : `chmod +x docker/entrypoint.sh`
+
+---
+
+### 🔍 4. Commandes utiles
+
+| Action                       | Commande                                                   |
+| ---------------------------- | ---------------------------------------------------------- |
+| Démarrer tous les conteneurs | `docker compose up -d`                                     |
+| Rebuild complet              | `docker compose up -d --build`                             |
+| Voir les logs en direct      | `docker compose logs -f api`                               |
+| Arrêter les services         | `docker compose down`                                      |
+| Supprimer les volumes        | `docker compose down -v`                                   |
+| Accéder à la DB via Adminer  | [http://localhost:8080](http://localhost:8080)             |
+| Ouvrir un shell API          | `docker exec -it dexchange-api sh`                         |
+| Ouvrir un shell Postgres     | `docker exec -it postgres-db psql -U Kalanji -d dexchange` |
+
+---
+
+### 🧠 5. Bonnes pratiques Docker
+
+- Ignore `node_modules`, `.env`, `dist`, etc. via `.dockerignore`
+- En prod : remplacer `start:dev` par `npm run build && node dist/main.js`
+- Garde les secrets (`API_KEY`, etc.) dans un `.env` privé
+- Pour PNPM : adapte les commandes (`pnpm install`, etc.)
+
 Les tables `Transfer` et `AuditEvent` sont synchronisées avec Prisma et disponibles via le client `PrismaService`.
 
 ---

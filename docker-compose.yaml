@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: Kalanji
+      POSTGRES_PASSWORD: Kalanji2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - db_network
+volumes:
+  pgdata:
+networks:
+  db_network:
+    driver: bridge
