@@ -1,8 +1,8 @@
 import { ConfigService } from "@nestjs/config";
 import { DatabaseService } from "../module/configuration/database/database.service";
-import { TRANSFERT_STATUS } from "@prisma/client";
+import { TRANSFER_STATUS } from "@prisma/client";
 import { create } from "domain";
-import { TransfertService } from "../module/transfert/transfert.service";
+import { TransferService } from "../module/transfer/transfer.service";
 
 
 
@@ -17,24 +17,24 @@ jest.mock('../module/transfert/provider.simulator', () => ({
 jest.mock('../module/transfert/transfert.service', () => ({
      TransfertService: class {
           create(dto) {
-               return Promise.resolve({ ...dto, id: 'trf-123', status: TRANSFERT_STATUS.PENDING });
+               return Promise.resolve({ ...dto, id: 'trf-123', status: TRANSFER_STATUS.PENDING });
           }
           async process(id: string) {
-               return Promise.resolve({ id, status: TRANSFERT_STATUS.SUCCESS, ref: 'TRF-20240101-0001' });
+               return Promise.resolve({ id, status: TRANSFER_STATUS.SUCCESS, ref: 'TRF-20240101-0001' });
           }
           findOne(id: string) {
-               return Promise.resolve({ id, status: TRANSFERT_STATUS.SUCCESS, ref: 'TRF-20240101-0001' });
+               return Promise.resolve({ id, status: TRANSFER_STATUS.SUCCESS, ref: 'TRF-20240101-0001' });
           }
      }
 }))
 
 
 describe('State transitions', () => {
-     let service: TransfertService;
+     let service: TransferService;
 
 
      beforeEach(() => {
-          service = new TransfertService(new (class { })() as any, new (class { })() as any);
+          service = new TransferService(new (class { })() as any, new (class { })() as any);
      });
 
 

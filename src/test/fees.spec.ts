@@ -1,11 +1,9 @@
-import { ConfigService } from "@nestjs/config";
-import { DatabaseService } from "../module/configuration/database/database.service";
-import { TransfertService } from "../module/transfert/transfert.service";
+import { TransferService } from "../module/transfer/transfer.service";
 
 
 
 describe('Fees calculation', () => {
-     const service = new TransfertService(new DatabaseService, new ConfigService);
+     const service = new TransferService(new (class { })() as any, new (class { })() as any);
 
 
      it('applies 0.8% rounded up with bounds [100, 1500]', () => {

@@ -7,12 +7,12 @@ generator client {
      provider = "prisma-client-js"
 }
 
-enum TRANSFERT_CHANNEL {
+enum TRANSFER_CHANNEL {
      WAVE
      OM
 }
 
-enum TRANSFERT_STATUS {
+enum TRANSFER_STATUS {
      PENDING
      PROCESSING
      SUCCESS
@@ -20,17 +20,39 @@ enum TRANSFERT_STATUS {
      CANCELED
 }
 
-model Tarnsferts {
-     id        String            @id @default(cuid())
-     amount    Float
-     currency  String?
-     ref       String            @unique
-     channel   TRANSFERT_CHANNEL
-     recipient Json?
-     metadata  Json?
-     fees      Int
-     total     Int
-     status    TRANSFERT_STATUS  @default(PENDING)
-     createdAt DateTime          @default(now())
-     updatedAt DateTime          @updatedAt
+model Transfers {
+     id         String           @id @default(cuid())
+     amount     Float
+     currency   String?
+     ref        String           @unique
+     channel    TRANSFER_CHANNEL
+     recipient  Json?
+     metadata   Json?
+     fees       Int
+     total      Int
+     status     TRANSFER_STATUS  @default(PENDING)
+     createdAt  DateTime         @default(now())
+     updatedAt  DateTime         @updatedAt
+     AuditEvent AuditEvent[]
+}
+
+enum AuditAction {
+     TRANSFER_CREATED
+     TRANSFER_PROCESSING
+     TRANSFER_SUCCESS
+     TRANSFER_FAILED
+     TRANSFER_CANCELED
+}
+
+model AuditEvent {
+     id         String      @id @default(uuid())
+     action     AuditAction
+     transferId String? // FK optionnelle
+     transfer   Transfers?  @relation(fields: [transferId], references: [id], onDelete: SetNull)
+     payload    Json? // détails (diffs, refs provider, erreurs…)
+     at         DateTime    @default(now())
+
+     @@index([action, at])
+     @@index([transferId, at])
+     @@map("audit_events") // (optionnel) nom de table
 }
