@@ -275,7 +275,7 @@ Ainsi :
 
 Les tests couvrent :
 
-- Le calcul des frais (`0.8 %`, min `100`, max `1500`)
+- Le calcul des frais 18 %,
 - Les transitions d’état (`PENDING → SUCCESS/FAILED`)
 - Les vérifications du guard (`x-api-key`)
 
