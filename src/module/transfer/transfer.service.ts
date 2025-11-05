@@ -100,21 +100,22 @@ export class TransferService implements OnModuleInit {
     }
     const simulateDelayMs = 2000
     await this._db.transfers.update({ where: { id }, data: { status: TRANSFER_STATUS.PROCESSING } }).then(async val => {
-      await this._auditService.record({ action: 'TRANSFER_PROCESSING', transferId: val.id, payload: { ...val } })
+      await this._auditService.record({ action: 'TRANSFER_PROCESSING', transferId: val.id, payload: { ...val } });
+
     })
 
     const provider = new ProviderSimulator(simulateDelayMs);
     const res = await provider.process();
 
-    if (res.ok)
+    if (res.ok === true)
       return this._db.transfers.update({ where: { id }, data: { status: TRANSFER_STATUS.SUCCESS } }).then(async val => {
-        await this._auditService.record({ action: 'TRANSFER_SUCCESS', transferId: val.id, payload: { ...val } })
+        await this._auditService.record({ action: 'TRANSFER_SUCCESS', transferId: val.id, payload: { ...val } });
         return val;
       })
     else
       return this._db.transfers.update({ where: { id }, data: { status: TRANSFER_STATUS.FAILED } }).then(async val => {
         await this._auditService.record({ action: 'TRANSFER_FAILED', transferId: val.id, payload: { ...val } })
-        return val;
+        return { ...val, message: res.errorCode };
       })
   }
 }

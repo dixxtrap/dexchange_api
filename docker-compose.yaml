@@ -1,19 +1,56 @@
+version: "3.9"
+
 services:
   db:
-    image: postgres:latest
+    image: postgres:16
     container_name: postgres-db
     restart: always
     environment:
       POSTGRES_USER: Kalanji
       POSTGRES_PASSWORD: Kalanji2024
+      POSTGRES_DB: dexchange
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - db_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Kalanji -d dexchange"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [db_network]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dexchange-api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: ["sh", "./docker/entrypoint.sh"]
+    networks: [db_network]
+
+  adminer:
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [db_network]
+
 volumes:
   pgdata:
+
 networks:
   db_network:
     driver: bridge
