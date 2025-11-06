@@ -64,7 +64,7 @@ $ npm run test:cov
 
 ### ⚙️ Variables d’environnement (`.env`)
 ```env
-API_KEY=admin
+API_KEY=Itachi
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dexchange
 PORT=3000
 ````
@@ -89,7 +89,7 @@ Toutes les routes de l’API sont **protégées** par un guard global (`ApiKeyGu
 Celui-ci vérifie la présence du header :
 
 ```http
-x-api-key: admin
+x-api-key: Itachi
 ```
 
 - Si absent → `401 Unauthorized`
@@ -265,7 +265,7 @@ docker compose up -d --build
 
 ```env
 PORT=3000
-API_KEY=admin
+API_KEY=Itachi
 DATABASE_URL="postgresql://Kalanji:Kalanji2024@db:5432/dexchange?schema=public"
 POSTGRES_USER=Kalanji
 POSTGRES_PASSWORD=Kalanji2024
